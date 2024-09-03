@@ -148,6 +148,7 @@ typedef struct flash_config
 } flash_config_t;
 
 #include "airspyhf_libusb.h"
+#include "airspyhf_i2s.h"
 
 static int airspyhf_config_read(airspyhf_device_t* device, uint8_t *buffer, uint16_t length);
 
