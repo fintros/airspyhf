@@ -147,7 +147,9 @@ typedef struct flash_config
 	uint32_t frontend_options;
 } flash_config_t;
 
+#ifndef NO_LIBUSB_CONNECTOR
 #include "airspyhf_libusb.h"
+#endif
 #include "airspyhf_i2s.h"
 
 static int airspyhf_config_read(airspyhf_device_t* device, uint8_t *buffer, uint16_t length);
@@ -631,11 +633,13 @@ int airspyhf_list_devices(uint64_t *serials, int count)
 {
 	int result = 0;
 	airspyhf_transport_t transport;
+#ifndef	NO_LIBUSB_CONNECTOR
 	if(airspyhf_get_libusb_transport(&transport) == AIRSPYHF_SUCCESS)	
 	{
 		result = transport.list_devices(&transport, serials, count);
 		transport.exit(&transport);
 	}
+#endif	
 #ifdef I2S_EXIST
 	if(airspyhf_get_i2s_transport(&transport) == AIRSPYHF_SUCCESS)	
 	{
@@ -675,6 +679,7 @@ static int airspyhf_open_init(airspyhf_device_t** device, uint64_t serial_number
 		return AIRSPYHF_ERROR;
 	}
 
+#ifndef NO_LIBUSB_CONNECTOR
 	if(airspyhf_get_libusb_transport(lib_device->transport) == AIRSPYHF_ERROR)
 	{
 		free(lib_device->transport);
@@ -685,6 +690,9 @@ static int airspyhf_open_init(airspyhf_device_t** device, uint64_t serial_number
 	if(lib_device->transport->device_open(lib_device, serial_number, fd) == AIRSPYHF_ERROR)
 	{
 		lib_device->transport->exit(lib_device->transport);
+#else
+	{
+#endif	
 #ifdef I2S_EXIST
 		if((airspyhf_get_i2s_transport(lib_device->transport) == AIRSPYHF_ERROR) ||
 		   (lib_device->transport->device_open(lib_device, serial_number, fd) == AIRSPYHF_ERROR))
