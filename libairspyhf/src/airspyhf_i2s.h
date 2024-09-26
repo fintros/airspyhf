@@ -30,10 +30,28 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/ioctl.h>
+#include <errno.h>
 
 static const char airspyhf_i2s_device[] = "/dev/airspy0";
 
 #define TRANSFER_LIST_DEPTH 32
+
+#define AIRSPY_IOCTL_MAX_DATA_SIZE 128
+
+/// The following block can be included with #include "airspy-control.h" - moved here to reduce number of dependencies
+typedef struct airspy_ioctl
+{
+	uint16_t data_len;
+	uint8_t data[AIRSPY_IOCTL_MAX_DATA_SIZE - sizeof(uint16_t)];
+} airspy_ioctl_t;
+
+typedef struct airspy_ioctl_message
+{
+	uint64_t tx;
+	uint64_t rx;
+} airspy_ioctl_message_t;
+/// end of block
 
 typedef struct i2s_transport_data
 {
@@ -137,47 +155,6 @@ static inline void wake_rx_thread(i2s_transport_data_t *data)
     pthread_cond_signal(&data->rx_condition);
 }
 
-static int airspyhf_i2s_read_samplerates(airspyhf_device_t *dev_handle, uint32_t *buffer, const uint32_t len)
-{
-    // i2s_transport_data_t *data = (i2s_transport_data_t *)(dev_handle->transport->transport_data);
-    // FILE *i2s_device = data->i2s_dev_file;
-
-    //  ToDo - change to ioctl to the device
-    if (len == 0)
-        *buffer = 1;
-    else if (len >= 1)
-        *buffer = 768000;
-    else
-        return 0;
-
-    return 4;
-}
-
-static int airspyhf_i2s_read_samplerate_architectures(airspyhf_device_t *dev_handle, uint8_t *buffer, const uint32_t len)
-{
-    //  ToDo - change to ioctl to the device
-    return -1;
-}
-
-static int airspyhf_i2s_read_att_steps(airspyhf_device_t *dev_handle, void *buffer, const uint32_t count)
-{
-    //  ToDo - change to ioctl to the device
-    return -1;
-}
-
-static int airspyhf_i2s_config_read(airspyhf_device_t *dev_handle, uint8_t *buffer, uint16_t length)
-{
-    //  ToDo - change to ioctl to the device
-    return -1;
-}
-
-static int airspyhf_i2s_version_string_read(airspyhf_device_t *dev_handle, char *version, uint32_t length)
-{
-    //  ToDo - change to ioctl to the device
-    strncpy(version, "I2S driver version", length);
-    return length;
-}
-
 static int airspyhf_i2s_set_receiver_mode(airspyhf_device_t *dev_handle, receiver_mode_t value)
 {
     i2s_transport_data_t *data = (i2s_transport_data_t *)(dev_handle->transport->transport_data);
@@ -200,102 +177,6 @@ static int airspyhf_i2s_set_receiver_mode(airspyhf_device_t *dev_handle, receive
     }
 
     return 0;
-}
-
-static int airspyhf_i2s_set_freq(airspyhf_device_t *dev_handle, uint8_t *buffer, const uint32_t length)
-{
-    //  ToDo - change to ioctl to the device
-    // uint32_t freq = (((uint32_t)buffer[0]) << 24) |
-    //                  (((uint32_t)buffer[1]) << 16) |
-    //                  (((uint32_t)buffer[2]) << 8) |
-    //                  (((uint32_t)buffer[3]));
-
-    return length;
-}
-
-static int airspyhf_i2s_set_sample_rate(airspyhf_device_t *dev_handle, const uint16_t freqIndex)
-{
-    //  ToDo - change to ioctl to the device
-    return 0;
-}
-
-static int airspyhf_i2s_get_filter_gain(airspyhf_device_t *dev_handle, uint8_t *buffer, uint16_t length)
-{
-    //  ToDo - change to ioctl to the device
-    return -1;
-}
-
-static int airspyhf_i2s_set_agc(airspyhf_device_t *dev_handle, uint16_t flag)
-{
-    //  ToDo - change to ioctl to the device
-    return 0;
-}
-
-static int airspyhf_i2s_set_agc_threshold(airspyhf_device_t *dev_handle, uint16_t threshold)
-{
-    //  ToDo - change to ioctl to the device
-    return 0;
-}
-
-static int airspyhf_i2s_set_user_output(airspyhf_device_t *dev_handle, uint16_t pin, uint16_t value)
-{
-    //  ToDo - change to ioctl to the device
-    return 0;
-}
-
-static int airspyhf_i2s_set_att_index(airspyhf_device_t *dev_handle, uint16_t index)
-{
-    //  ToDo - change to ioctl to the device
-    return 0;
-}
-
-static int airspyhf_i2s_set_lna(airspyhf_device_t *dev_handle, uint16_t flag)
-{
-    //  ToDo - change to ioctl to the device
-    return 0;
-}
-
-static int airspyhf_i2s_set_vctcxo_calibration(airspyhf_device_t *dev_handle, uint16_t vc)
-{
-    //  ToDo - change to ioctl to the device
-    return 0;
-}
-
-static int airspyhf_i2s_set_bias_tee(airspyhf_device_t *dev_handle, uint16_t value)
-{
-    //  ToDo - change to ioctl to the device
-    return 0;
-}
-
-static int airspyhf_i2s_set_frontend_options(airspyhf_device_t *dev_handle, uint16_t high, uint16_t low)
-{
-    //  ToDo - change to ioctl to the device
-    return 0;
-}
-
-static int airspyhf_i2s_get_freq_delta(airspyhf_device_t *dev_handle, uint8_t *buffer, uint16_t length)
-{
-    //  ToDo - change to ioctl to the device
-    memset(buffer, 0, length);
-    return length;
-}
-
-static int airspyhf_i2s_get_bias_tee_count(airspyhf_device_t *dev_handle, uint8_t *buffer, uint16_t length)
-{
-    //  ToDo - change to ioctl to the device
-    return -1;
-}
-
-static int airspyhf_i2s_get_bias_tee_name(airspyhf_device_t *dev_handle, uint16_t index, uint8_t *buffer, uint16_t length)
-{
-    memset(buffer, 0, length);
-    return length;
-}
-
-static int airspyhf_i2s_config_write(airspyhf_device_t *dev_handle, uint8_t *buffer, uint16_t length)
-{
-    //  ToDo - change to ioctl to the device
-    return length;
 }
 
 /////////////////////////////////////////////////////////////
@@ -344,89 +225,74 @@ int i2s_transport_transfer_control(airspyhf_device_t *dev_handle,
                                    uint16_t wLength)
 
 {
+    int result = 0;
+    i2s_transport_data_t *tdata = (i2s_transport_data_t *)(dev_handle->transport->transport_data);
+
+    if (bRequest == AIRSPYHF_RECEIVER_MODE)
+        result = airspyhf_i2s_set_receiver_mode(dev_handle, wValue);
+
+    if (!tdata->i2s_dev_file)
+        return AIRSPYHF_ERROR;
+
+    int fd = fileno(tdata->i2s_dev_file);
+
+    airspy_ioctl_t transferOut;
+    airspy_ioctl_t transferIn;
+    transferOut.data_len = wLength;
+    *(uint16_t *)(&transferOut.data[0]) = wValue;
+    *(uint16_t *)(&transferOut.data[2]) = wIndex;
+
+    airspy_ioctl_message_t ioctl_message;
+    ioctl_message.tx = (uint64_t)&transferOut;
+    ioctl_message.rx = (uint64_t)&transferIn;
+
     switch (bRequest)
     {
-
-    case AIRSPYHF_GET_SERIALNO_BOARDID:
-    {
-        airspyhf_read_partid_serialno_t serial_no;
-        serial_no.part_id = AIRSPYHF_BOARD_ID_AIRSPYHF_REV_A;
-        serial_no.serial_no[0] = 0xFFFFFFFF;
-        serial_no.serial_no[1] = 0xFFFFFFFF;
-        serial_no.serial_no[2] = 0xFFFFFFFF;
-        serial_no.serial_no[3] = 0xFFFFFFFF;
-        uint32_t target_len = sizeof(serial_no);
-        if (target_len > wLength)
-            target_len = wLength;
-        memcpy(data, &serial_no, target_len);
-        return target_len;
-    }
-    case AIRSPYHF_GET_SAMPLERATES:
-        return airspyhf_i2s_read_samplerates(dev_handle, (uint32_t *)data, wIndex);
-
-    case AIRSPYHF_GET_SAMPLERATE_ARCHITECTURES:
-        return airspyhf_i2s_read_samplerate_architectures(dev_handle, data, wIndex);
-
-    case AIRSPYHF_GET_ATT_STEPS:
-        return airspyhf_i2s_read_att_steps(dev_handle, data, wIndex);
-
-    case AIRSPYHF_CONFIG_READ:
-        return airspyhf_i2s_config_read(dev_handle, data, wLength);
-
-    case AIRSPYHF_GET_VERSION_STRING:
-        return airspyhf_i2s_version_string_read(dev_handle, (char *)data, wLength);
-
     case AIRSPYHF_RECEIVER_MODE:
-        return airspyhf_i2s_set_receiver_mode(dev_handle, wValue);
-
     case AIRSPYHF_SET_FREQ:
-        return airspyhf_i2s_set_freq(dev_handle, data, wLength);
-
     case AIRSPYHF_SET_SAMPLERATE:
-        return airspyhf_i2s_set_sample_rate(dev_handle, wIndex);
-
-    case AIRSPYHF_GET_FILTER_GAIN:
-        return airspyhf_i2s_get_filter_gain(dev_handle, data, wLength);
-
-    case AIRSPYHF_SET_AGC:
-        return airspyhf_i2s_set_agc(dev_handle, wValue);
-
-    case AIRSPYHF_SET_AGC_THRESHOLD:
-        return airspyhf_i2s_set_agc_threshold(dev_handle, wValue);
-
-    case AIRSPYHF_SET_USER_OUTPUT:
-        return airspyhf_i2s_set_user_output(dev_handle, wValue, wIndex);
-
-    case AIRSPYHF_SET_ATT:
-        return airspyhf_i2s_set_att_index(dev_handle, wValue);
-
-    case AIRSPYHF_SET_LNA:
-        return airspyhf_i2s_set_lna(dev_handle, wValue);
-
-    case AIRSPYHF_SET_VCTCXO_CALIBRATION:
-        return airspyhf_i2s_set_vctcxo_calibration(dev_handle, wValue);
-
-    case AIRSPYHF_SET_FRONTEND_OPTIONS:
-        return airspyhf_i2s_set_frontend_options(dev_handle, wValue, wIndex);
-
-    case AIRSPYHF_SET_BIAS_TEE:
-        return airspyhf_i2s_set_bias_tee(dev_handle, wValue);
-
-    case AIRSPYHF_GET_FREQ_DELTA:
-        return airspyhf_i2s_get_freq_delta(dev_handle, data, wLength);
-
     case AIRSPYHF_CONFIG_WRITE:
-        return airspyhf_i2s_config_write(dev_handle, data, wLength);
+    case AIRSPYHF_SET_AGC:
+    case AIRSPYHF_SET_AGC_THRESHOLD:
+    case AIRSPYHF_SET_ATT:
+    case AIRSPYHF_SET_LNA:
+    case AIRSPYHF_SET_VCTCXO_CALIBRATION:
+    case AIRSPYHF_SET_FRONTEND_OPTIONS:
+    case AIRSPYHF_SET_BIAS_TEE:
+        if (wLength > (sizeof(transferOut.data) - 4))
+            wLength = sizeof(transferOut.data) - 4; // should never happens - just guard
 
+        if (wLength)
+            memcpy(&transferOut.data[4], data, wLength);
+
+        // some lower ioctls seems to cause issues - at least #2 does not passed to the driver - it is workaround - to check
+        result = ioctl(fd, bRequest + 0x100, &ioctl_message);
+        break;
+    case AIRSPYHF_GET_SERIALNO_BOARDID:
+    case AIRSPYHF_SET_USER_OUTPUT:
+    case AIRSPYHF_GET_VERSION_STRING:
+    case AIRSPYHF_GET_SAMPLERATES:
+    case AIRSPYHF_CONFIG_READ:
+    case AIRSPYHF_GET_SAMPLERATE_ARCHITECTURES:
+    case AIRSPYHF_GET_FILTER_GAIN:
+    case AIRSPYHF_GET_FREQ_DELTA:
+    case AIRSPYHF_GET_ATT_STEPS:
     case AIRSPYHF_GET_BIAS_TEE_COUNT:
-        return airspyhf_i2s_get_bias_tee_count(dev_handle, data, wLength);
-
     case AIRSPYHF_GET_BIAS_TEE_NAME:
-        return airspyhf_i2s_get_bias_tee_name(dev_handle, wIndex, data, wLength);
-
     default:
-        return -1;
-    };
+        // some lower ioctls seems to cause issues - at least #2 does not passed to the driver - it is workaround - to check
+        result = ioctl(fd, bRequest + 0x100, &ioctl_message);
+        if (result > 0)
+        {
+            if (wLength > sizeof(transferIn.data))
+                wLength = sizeof(transferIn.data);
+
+            if (data && wLength)
+                memcpy(data, &transferIn.data[0], wLength);
+        }
+    }
+
+    return result;
 }
 
 int i2s_transport_transfer_cancel(airspyhf_device_t *dev_handle, airspyhf_ll_transfer_t *transfer)
@@ -484,6 +350,30 @@ int i2s_transport_handle_events(airspyhf_device_t *dev_handle, struct timeval *t
     return AIRSPYHF_SUCCESS;
 }
 
+static int read_serial_no(FILE *f, uint64_t *serial)
+{
+    int result = 0;
+    if (serial)
+    {
+        int fd = fileno(f);
+
+        airspy_ioctl_t transferOut;
+        airspy_ioctl_t transferIn;
+        transferOut.data_len = sizeof(uint64_t);
+        *(uint16_t *)(&transferOut.data[0]) = 0;
+        *(uint16_t *)(&transferOut.data[2]) = 0;
+
+        airspy_ioctl_message_t ioctl_message;
+        ioctl_message.tx = (uint64_t)&transferOut;
+        ioctl_message.rx = (uint64_t)&transferIn;
+
+        result = ioctl(fd, AIRSPYHF_GET_SERIALNO_BOARDID + 0x100, &ioctl_message);
+        if (result)
+            memcpy(serial, transferIn.data, sizeof(uint64_t));
+    }
+    return result;
+}
+
 int i2s_transport_list_devices(airspyhf_transport_t *transport, uint64_t *serials, int count)
 {
     i2s_transport_data_t *data = (i2s_transport_data_t *)(transport->transport_data);
@@ -494,22 +384,25 @@ int i2s_transport_list_devices(airspyhf_transport_t *transport, uint64_t *serial
         data->i2s_dev_file = fopen(airspyhf_i2s_device, "rb");
         if (data->i2s_dev_file)
         {
+            if (count && serials)
+                read_serial_no(data->i2s_dev_file, serials);
+
             fclose(data->i2s_dev_file);
             data->i2s_dev_file = 0;
             i2s_exists = 1;
         }
     }
     else
+    {
+        if (count && serials)
+            read_serial_no(data->i2s_dev_file, serials);
+
         i2s_exists = 1;
+    }
 
     if (i2s_exists)
-    {
-        // ToDo - ioctl to the device to get serial no
-        if (count)
-            serials[0] = 0xffffffffffffffff;
-
         return 1;
-    }
+
     return 0;
 }
 
