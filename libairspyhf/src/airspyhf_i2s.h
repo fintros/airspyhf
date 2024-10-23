@@ -37,13 +37,13 @@ static const char airspyhf_i2s_device[] = "/dev/airspy0";
 
 #define TRANSFER_LIST_DEPTH 32
 
-#define AIRSPY_IOCTL_MAX_DATA_SIZE 128
+#define AIRSPY_IOCTL_MAX_DATA_SIZE 260
 
 /// The following block can be included with #include "airspy-control.h" - moved here to reduce number of dependencies
 typedef struct airspy_ioctl
 {
-	uint16_t data_len;
-	uint8_t data[AIRSPY_IOCTL_MAX_DATA_SIZE - sizeof(uint16_t)];
+	uint32_t data_len;
+	uint8_t data[AIRSPY_IOCTL_MAX_DATA_SIZE];
 } airspy_ioctl_t;
 
 typedef struct airspy_ioctl_message
